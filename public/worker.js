@@ -1,8 +1,8 @@
 var idb = self.indexedDB || self.mozIndexedDB
   || self.webkitIndexedDB || self.msIndexedDB
 
-function getdb (name, version, stores) {
-  var dbreq = idb.open(name, version)
+function getdb (name, stores) {
+  var dbreq = idb.open(name)
   dbreq.addEventListener('upgradeneeded', function () {
     stores.forEach(function (name) {
       dbreq.result.createObjectStore(name)
@@ -20,12 +20,12 @@ function getdb (name, version, stores) {
     else queue.push(f)
   }
 }
-var getmetadb = getdb('slugboot.meta', 1.0, ['meta'])
+var getmetadb = getdb('slugboot.meta', ['meta'])
 var filedb = {}
 
 function getvstore (version, mode, cb) {
   if (!filedb[version]) {
-    filedb[version] = getdb('slugboot.files', version, ['files'])
+    filedb[version] = getdb('slugboot.v' + version, ['files'])
   }
   filedb[version](function (db) {
     var tx = db.transaction(['files'],mode)
