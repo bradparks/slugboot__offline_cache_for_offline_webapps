@@ -3,20 +3,28 @@
   "version": "1.0.0",
   "description": "load",
   "main": "index.js",
-  "directories": {
-    "example": "example",
-    "test": "test"
-  },
-  "scripts": {
-    "test": "tape test/*.js",
-    "watch": "watchify main.js -o public/boot.js -dv"
-  },
-  "keywords": [],
+  "keywords": [
+    "serviceworker",
+    "cache",
+    "bricktheweb",
+    "offline",
+    "offlinefirst",
+    "versioning",
+    "webapp",
+    "hyperboot"
+  ],
   "author": "substack",
   "license": "BSD",
   "dependencies": {
-    "auto-sni": "^1.1.3",
-    "inherits": "^2.0.1",
-    "pump": "^1.0.1"
-  }
+    "inherits": "^2.0.1"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/substack/slugboot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/substack/slugboot/issues"
+  },
+  "homepage": "https://github.com/substack/slugboot#readme"
 }
