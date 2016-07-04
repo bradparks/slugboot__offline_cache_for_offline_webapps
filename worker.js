@@ -1,5 +1,6 @@
 var idb = self.indexedDB || self.mozIndexedDB
   || self.webkitIndexedDB || self.msIndexedDB
+var dbs = {}
 
 function getdb (name, stores) {
   var dbreq = idb.open(name)
@@ -10,6 +11,7 @@ function getdb (name, stores) {
   })
   var db = null
   errb(dbreq, function (err, ev) {
+    dbs[name] = dbreq.result
     db = dbreq.result
     queue.forEach(function (f) { f(db) })
     queue = null
@@ -94,7 +96,6 @@ self.addEventListener('message', function (ev) {
     putFile(data.path, data.body, function (err) {
       if (err) error(err)
       else reply()
-      if (--pending === 0) ready()
     })
   } else if (data.action === 'fetch') {
     pending++
@@ -105,7 +106,6 @@ self.addEventListener('message', function (ev) {
         else putFile(data.path, body, function (err) {
           if (err) error(err)
           else reply()
-          if (--pending === 0) ready()
         })
       })
     })
@@ -116,10 +116,10 @@ self.addEventListener('message', function (ev) {
       else putFile(data.dst, body, function (err) {
         if (err) error(err)
         else reply()
-        if (--pending === 0) ready()
       })
     })
   } else if (data.action === 'commit') {
+    console.log('COMMIT?', pending)
     if (pending > 0) opqueue.push(handleCommit)
     else handleCommit()
   }
@@ -129,17 +129,30 @@ self.addEventListener('message', function (ev) {
       if (err) return error(err)
       metaput('version', (version || 0) + 1, function (err) {
         if (err) error(err)
-        else reply()
-        if (--pending === 0) ready()
+        else if (!version) reply()
+        else clear(version, function (err) {
+          if (err) error(err)
+          else reply()
+        })
       })
     })
+  }
+  function clear (version, cb) {
+    var db = dbs['slugboot.v' + version]
+    if (db) {
+      db.close()
+      delete dbs['slugboot.v' + version]
+    }
+    errb(idb.deleteDatabase('slugboot.v' + version), cb)
   }
   function error (err) {
     console.error(err)
     ev.ports[0].postMessage({ error: err })
+    if (--pending === 0) ready()
   }
   function reply (value) {
     ev.ports[0].postMessage({ response: value })
+    if (--pending === 0) ready()
   }
 })
 

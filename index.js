@@ -34,12 +34,11 @@ Slug.prototype._getWorker = function (cb) {
 }
 
 Slug.prototype._send = function (data, cb) {
-  var chan = new MessageChannel
-  chan.port1.addEventListener('message', onmessage)
   this._getWorker(function (worker) {
+    var chan = new MessageChannel
+    chan.port1.addEventListener('message', onmessage)
     worker.postMessage(data, [chan.port2])
   })
-
   function onmessage (ev) {
     if (cb && ev.data.error) cb(ev.data.error)
     else if (cb) cb(null, ev.data.response)
