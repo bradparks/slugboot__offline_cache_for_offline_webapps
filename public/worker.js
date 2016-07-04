@@ -21,13 +21,13 @@ function getdb (name, stores) {
   }
 }
 var getmetadb = getdb('slugboot.meta', ['meta'])
-var filedb = {}
+var verdb = {}
 
 function getvstore (version, mode, cb) {
-  if (!filedb[version]) {
-    filedb[version] = getdb('slugboot.v' + version, ['files'])
+  if (!verdb[version]) {
+    verdb[version] = getdb('slugboot.v' + version, ['files'])
   }
-  filedb[version](function (db) {
+  verdb[version](function (db) {
     var tx = db.transaction(['files'],mode)
     tx.addEventListener('error', function (err) {
       console.error(err)
@@ -89,19 +89,7 @@ self.addEventListener('fetch', function (ev) {
 
 self.addEventListener('message', function (ev) {
   var data = ev.data || {}
-  if (data.action === 'clear') {
-    var dbnames = idb.getDatabaseNames || idb.webkitGetDatabaseNames
-    if (dbnames) {
-      dbnames.addEventListener('success', function (ev) {
-        for (var i in ev.target.result) {
-          idb.deleteDatabase(ev.target.result[i])
-        }
-        reply()
-      })
-    } else {
-      idb.deleteDatabase('cache')
-    }
-  } else if (data.action === 'put') {
+  if (data.action === 'put') {
     metaget('version', function (err, version) {
       if (err) return error(err)
       getvstore((version || 0) + 1, 'readwrite', function (err, store) {
