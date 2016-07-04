@@ -119,9 +119,13 @@ self.addEventListener('message', function (ev) {
       })
     })
   } else if (data.action === 'commit') {
-    console.log('COMMIT?', pending)
     if (pending > 0) opqueue.push(handleCommit)
     else handleCommit()
+  } else if (data.action === 'version') {
+    metaget('version', function (err, version) {
+      if (err) error(err)
+      else reply(version)
+    })
   }
   function handleCommit () {
     pending++

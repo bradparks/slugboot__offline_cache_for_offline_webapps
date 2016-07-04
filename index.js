@@ -77,6 +77,10 @@ Slug.prototype.copy = function (src, dst, cb) {
   this._send({ action: 'copy', src: src, dst: dst }, cb)
 }
 
+Slug.prototype.version = function (cb) {
+  this._send({ action: 'version' }, cb)
+}
+
 function errback (p, cb) {
   p.then(function (x) { cb(null, x) }).catch(cb)
 }
