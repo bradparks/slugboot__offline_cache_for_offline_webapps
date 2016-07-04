@@ -46,6 +46,14 @@ Slug.prototype._send = function (data, cb) {
   }
 }
 
+Slug.prototype.put = function (path, body, cb) {
+  this._send({ action: 'put', path: path, body: body }, cb)
+}
+
+Slug.prototype.commit = function (cb) {
+  this._send({ action: 'commit' }, cb)
+}
+
 function errback (p, cb) {
   p.then(function (x) { cb(null, x) }).catch(cb)
 }

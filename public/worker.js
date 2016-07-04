@@ -87,25 +87,39 @@ self.addEventListener('fetch', function (ev) {
   }
 })
 
+var pending = 0
+var opqueue = []
+function ready () {
+  opqueue.splice(0).forEach(function (f) { f() })
+}
+
 self.addEventListener('message', function (ev) {
   var data = ev.data || {}
   if (data.action === 'put') {
+    pending++
     metaget('version', function (err, version) {
       if (err) return error(err)
       getvstore((version || 0) + 1, 'readwrite', function (err, store) {
         if (err) return error(err)
         op(store, store.put(data.body, data.path), function (err) {
-          if (err) return error(err)
+          if (err) error(err)
           else reply()
+          if (--pending === 0) ready()
         })
       })
     })
   } else if (data.action === 'commit') {
+    if (pending > 0) opqueue.push(handleCommit)
+    else handleCommit()
+  }
+  function handleCommit () {
+    pending++
     metaget('version', function (err, version) {
       if (err) return error(err)
       metaput('version', (version || 0) + 1, function (err) {
         if (err) error(err)
         else reply()
+        if (--pending === 0) ready()
       })
     })
   }
