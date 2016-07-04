@@ -7,23 +7,34 @@ inherits(Slug, EventEmitter)
 function Slug (workerFile) {
   var self = this
   if (!(self instanceof Slug)) return new Slug(workerFile)
+  self.worker = null
   var regp = navigator.serviceWorker.register(workerFile)
   errback(regp, function (err, reg) {
     if (err) return self.emit('error', err)
-    var worker
     if (reg.installing) {
-      worker = reg.installing
+      self.worker = reg.installing
       self.emit('state', 'installing')
     } else if (reg.waiting) {
-      worker = reg.waiting
+      self.worker = reg.waiting
       self.emit('state', 'waiting')
     } else if (reg.active) {
-      worker = reg.active
+      self.worker = reg.active
       self.emit('state', 'active')
     }
-    worker.addEventListener('statechange', function (e) {
+    self.worker.addEventListener('statechange', function (e) {
       self.emit('state', e.target.state)
     })
+  })
+}
+
+Slug.prototype._getWorker = function (cb) {
+  if (this.worker) cb(this.worker)
+  else this.once('state', function () { cb(this.worker) })
+}
+
+Slug.prototype._send = function (data) {
+  this._getWorker(function (worker) {
+    worker.postMessage(data)
   })
 }
 
