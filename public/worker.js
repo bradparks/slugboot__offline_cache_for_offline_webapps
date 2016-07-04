@@ -64,10 +64,8 @@ function metaput (key, value, cb) {
 self.addEventListener('fetch', function (ev) {
   var req = ev.request
   if (req.method === 'GET') {
-    console.log('GET', req.url)
     ev.respondWith(new Promise(function (resolve, reject) {
       metaget('version', function (err, version) {
-        console.log('VERSION', version)
         if (err) resolve(new Response(err+'', {status:500}))
         else if (version === undefined) {
           resolve(fetch(req))
@@ -76,9 +74,7 @@ self.addEventListener('fetch', function (ev) {
       function onstore (err, store) {
         if (err) resolve(new Response(err+'', {status:500}))
         var u = new URL(req.url)
-        console.log('ONSTORE', u.pathname)
         errb(store.get(u.pathname), function (err, ev) {
-          console.log('GOT:', ev.target.result)
           if (err) resolve(new Response(err+'', {status:500}))
           else if (ev.target.result === undefined) {
             resolve(new Response('not found', {status:404}))
