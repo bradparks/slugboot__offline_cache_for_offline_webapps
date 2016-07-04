@@ -58,13 +58,24 @@ Stage a string `body` to be saved at the path string `path`.
 ## slug.fetch(src, dst, cb)
 
 Request the document at the url string `src` and save the result to the path at
-`dst`. `cb(err)` fires with any errors.
+`dst`.
 
 If `dst` is not given, it will use the pathname of `src`.
+
+`cb(err)` fires with any errors.
+
+## slug.copy(src, dst, cb)
+
+Copy the file path `src` from the current active version to `dst` in the staging
+version.
+
+`cb(err)` fires with any errors.
 
 ## slug.commit(cb)
 
 Commit any staged changes and increment the version.
+
+`cb(err)` fires with any errors.
 
 # install
 

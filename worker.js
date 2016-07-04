@@ -65,25 +65,19 @@ self.addEventListener('fetch', function (ev) {
   var req = ev.request
   if (req.method === 'GET') {
     ev.respondWith(new Promise(function (resolve, reject) {
-      metaget('version', function (err, version) {
-        if (err) resolve(new Response(err+'', {status:500}))
-        else if (version === undefined) {
+      var u = new URL(req.url)
+      getFile(u.pathname, function (err, body, version) {
+        if (err) {
+          resolve(new Response(err.message, { status: err.status || 500 }))
+        } else if (version === undefined) {
           resolve(fetch(req))
-        } else getvstore(version, 'readonly', onstore)
+        } else if (body === undefined) {
+          resolve(new Response('not found', { status: 404 }))
+        } else resolve(new Response(body))
       })
-      function onstore (err, store) {
-        if (err) resolve(new Response(err+'', {status:500}))
-        var u = new URL(req.url)
-        errb(store.get(u.pathname), function (err, ev) {
-          if (err) resolve(new Response(err+'', {status:500}))
-          else if (ev.target.result === undefined) {
-            resolve(new Response('not found', {status:404}))
-          } else resolve(new Response(ev.target.result))
-        })
-      }
     }))
   } else {
-    ev.respondWith(new Response('not found',{status:404}))
+    ev.respondWith(new Response('not found',{ status: 404 }))
   }
 })
 
@@ -97,34 +91,32 @@ self.addEventListener('message', function (ev) {
   var data = ev.data || {}
   if (data.action === 'put') {
     pending++
-    metaget('version', function (err, version) {
-      if (err) return error(err)
-      getvstore((version || 0) + 1, 'readwrite', function (err, store) {
-        if (err) return error(err)
-        op(store, store.put(data.body, data.path), function (err) {
-          if (err) error(err)
-          else reply()
-          if (--pending === 0) ready()
-        })
-      })
+    putFile(data.path, data.body, function (err) {
+      if (err) error(err)
+      else reply()
+      if (--pending === 0) ready()
     })
   } else if (data.action === 'fetch') {
     pending++
     errback(fetch(data.url), function (err, res) {
       if (err) return error(err)
       errback(res.blob(), function (err, body) {
-        if (err) return error(err)
-        metaget('version', function (err, version) {
-          if (err) return error(err)
-          getvstore((version || 0) + 1, 'readwrite', function (err, store) {
-            if (err) return error(err)
-            op(store, store.put(body, data.path), function (err) {
-              if (err) error(err)
-              else reply()
-              if (--pending === 0) ready()
-            })
-          })
+        if (err) error(err)
+        else putFile(data.path, body, function (err) {
+          if (err) error(err)
+          else reply()
+          if (--pending === 0) ready()
         })
+      })
+    })
+  } else if (data.action === 'copy') {
+    pending++
+    getFile(data.src, function (err, body) {
+      if (err) error(err)
+      else putFile(data.dst, body, function (err) {
+        if (err) error(err)
+        else reply()
+        if (--pending === 0) ready()
       })
     })
   } else if (data.action === 'commit') {
@@ -159,6 +151,35 @@ function op (store, q, cb) {
   })
   store.transaction.addEventListener('complete', done)
   function done () { if (--pending === 0) cb(null) }
+}
+
+function getFile (file, cb) {
+  metaget('version', function (err, version) {
+    if (err) cb(err)
+    else if (version === undefined) {
+      cb(null, undefined)
+    } else getvstore(version, 'readonly', onstore)
+
+    function onstore (err, store) {
+      if (err) return cb(err)
+      try { var pathname = new URL(file).pathname }
+      catch (err) { pathname = file }
+      errb(store.get(pathname), function (err, ev) {
+        if (err) cb(err)
+        else cb(null, ev.target.result, version)
+      })
+    }
+  })
+}
+
+function putFile (file, body, cb) {
+  metaget('version', function (err, version) {
+    if (err) return error(err)
+    getvstore((version || 0) + 1, 'readwrite', function (err, store) {
+      if (err) return error(err)
+      op(store, store.put(body, file), cb)
+    })
+  })
 }
 
 function errb (p, cb) {
