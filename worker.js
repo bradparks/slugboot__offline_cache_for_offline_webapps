@@ -108,6 +108,25 @@ self.addEventListener('message', function (ev) {
         })
       })
     })
+  } else if (data.action === 'fetch') {
+    pending++
+    errback(fetch(data.url), function (err, res) {
+      if (err) return error(err)
+      errback(res.blob(), function (err, body) {
+        if (err) return error(err)
+        metaget('version', function (err, version) {
+          if (err) return error(err)
+          getvstore((version || 0) + 1, 'readwrite', function (err, store) {
+            if (err) return error(err)
+            op(store, store.put(body, data.path), function (err) {
+              if (err) error(err)
+              else reply()
+              if (--pending === 0) ready()
+            })
+          })
+        })
+      })
+    })
   } else if (data.action === 'commit') {
     if (pending > 0) opqueue.push(handleCommit)
     else handleCommit()
@@ -145,4 +164,8 @@ function op (store, q, cb) {
 function errb (p, cb) {
   p.addEventListener('success', function (ev) { cb(null, ev) })
   p.addEventListener('error', function (err) { cb(err) })
+}
+
+function errback (p, cb) {
+  p.then(function (r) { cb(null, r) }).catch(cb)
 }

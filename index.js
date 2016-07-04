@@ -54,6 +54,18 @@ Slug.prototype.commit = function (cb) {
   this._send({ action: 'commit' }, cb)
 }
 
+Slug.prototype.fetch = function (src, dst, cb) {
+  if (typeof dst === 'function') {
+    cb = dst
+    try { dst = new URL(src).pathname }
+    catch (err) { dst = src }
+  } else if (!dst) {
+    try { dst = new URL(src).pathname }
+    catch (err) { dst = src }
+  }
+  this._send({ action: 'fetch', url: src, path: dst }, cb)
+}
+
 function errback (p, cb) {
   p.then(function (x) { cb(null, x) }).catch(cb)
 }
