@@ -30,7 +30,7 @@ set up `public/` with the slugboot worker.js file:
 ```
 $ npm i -g browserify ecstatic
 $ mkdir public
-$ echo '<script src="bundle.js">' > public/index.html
+$ echo '<script src="bundle.js"></script>' > public/index.html
 $ cp `node -pe "require.resolve('slugboot/worker.js')"` public/
 $ browserify main.js > public/bundle.js
 $ ecstatic -p 44000 public/
