@@ -8,6 +8,7 @@ function Slug (workerFile) {
   var self = this
   if (!(self instanceof Slug)) return new Slug(workerFile)
   self.worker = null
+
   var regp = navigator.serviceWorker.register(workerFile)
   errback(regp, function (err, reg) {
     if (err) return self.emit('error', err)
@@ -32,10 +33,17 @@ Slug.prototype._getWorker = function (cb) {
   else this.once('state', function () { cb(this.worker) })
 }
 
-Slug.prototype._send = function (data) {
+Slug.prototype._send = function (data, cb) {
+  var chan = new MessageChannel
+  chan.port1.addEventListener('message', onmessage)
   this._getWorker(function (worker) {
-    worker.postMessage(data)
+    worker.postMessage(data, [chan.port2])
   })
+
+  function onmessage (ev) {
+    if (cb && ev.data.error) cb(ev.data.error)
+    else if (cb) cb(null, ev.data.response)
+  }
 }
 
 function errback (p, cb) {
