@@ -36,7 +36,7 @@ Slug.prototype._getWorker = function (cb) {
 Slug.prototype._send = function (data, cb) {
   this._getWorker(function (worker) {
     var chan = new MessageChannel
-    chan.port1.addEventListener('message', onmessage)
+    chan.port1.onmessage = onmessage
     worker.postMessage(data, [chan.port2])
   })
   function onmessage (ev) {
