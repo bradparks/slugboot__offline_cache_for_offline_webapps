@@ -10,6 +10,29 @@ This way, you can load webapps from p2p networks over webrtc, bluetooth LE,
 or acoustic couplers. The webapps stay saved on your computer and you can open
 them on a slug domain whenever you wish.
 
+# security
+
+slugboot uses trust on first use to initialize a generic webapp container that
+cannot be updated except through an application's own direct intervention.
+
+Unfortunately, until ServiceWorker version 2 ships with a
+[Service-Worker-Max-Age][1] header, service worker
+[Max-Age is capped to 24 hours][2]. This means the original domain that loaded
+the slugboot worker could later ship a malicious version of `/worker.js`.
+
+To mitigate this attack for now, users should add a record in `/etc/hosts` for
+slugbooted domains that points back to localhost. For example:
+
+```
+127.0.0.1    slug.example.com
+```
+
+The request or certificate check will fail for requests to `/worker.js`, so the old
+worker will continue to run as before.
+
+[1]: https://github.com/slightlyoff/ServiceWorker/issues/721
+[2]: https://github.com/slightlyoff/ServiceWorker/blob/master/explainer.md#updating-a-service-worker
+
 # example
 
 create a main.js file:
@@ -41,7 +64,7 @@ $ mkdir public
 $ echo '<script src="bundle.js"></script>' > public/index.html
 $ cp `node -pe "require.resolve('slugboot/worker.js')"` public/
 $ browserify main.js > public/bundle.js
-$ ecstatic -p 44000 public/
+$ ecstatic -H 'Service-Worker-Max-Age: 3153600000000' -p 44000 public/
 ```
 
 Now open `http://localhost:44000` and poke around with the `slug` instance on
